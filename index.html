@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#090d16">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Meta Glasses Studio">
+  <title>Ray-Ban Meta Smart Glasses — Photo Studio Pro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- In-browser EXIF binary injection engine -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/piexifjs/1.0.6/piexif.js"></script>
+
+  <style>
+    :root {
+      --bg: #090d16;
+      --bg-surface: #0e1422;
+      --bg-surface-elevated: #141c2e;
+      --bg-card: rgba(15, 22, 36, 0.82);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-accent: rgba(249, 115, 22, 0.4);
+      --border-hover: rgba(255, 255, 255, 0.18);
+      
+      /* Vibrant Studio Accent Palette */
+      --accent-orange: #f97316;
+      --accent-orange-glow: rgba(249, 115, 22, 0.4);
+      --accent-orange-dark: #ea580c;
+      --accent-gradient: linear-gradient(135deg, #ff6b00 0%, #f97316 20%, #ec4899 100%);
+      --accent-gradient-hover: linear-gradient(135deg, #ff7a1a 0%, #fb923c 20%, #f472b6 100%);
+      
+      --cyan-glow: #06b6d4;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      
+      --ok: #10b981;
+      --ok-bg: rgba(16, 185, 129, 0.14);
+      --danger: #ef4444;
+      --danger-bg: rgba(239, 68, 68, 0.14);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: var(--bg);
+      background-image: 
+        radial-gradient(circle at 12% 12%, rgba(249, 115, 22, 0.14) 0px, transparent 40%),
+        radial-gradient(circle at 88% 18%, rgba(139, 92, 246, 0.15) 0px, transparent 12%),
+        radial-gradient(circle at 50% 85%, rgba(6, 182, 212, 0.08) 0px, transparent 50%);
+      background-attachment: fixed;
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: env(safe-area-inset-top, 20px) 16px env(safe-area-inset-bottom, 24px) 16px;
+    }
+
+    .app-layout {
+      width: 100%;
+      max-width: 960px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 4px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      border: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 16px rgba(249, 115, 22, 0.2);
+    }
+
+    .brand-text h1 {
+      font-size: 21px;
+      font-weight: 800;
+      letter-spacing: -0.4px;
+      background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-text p {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .header-badges {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pill-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(249, 115, 22, 0.12);
+      color: #fb923c;
+      border: 1px solid rgba(249, 115, 22, 0.25);
+      padding: 5px 12px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+
+    .pill-badge.secondary {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-muted);
+      border-color: var(--border-subtle);
+    }
+
+    /* Main Grid */
+    .studio-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    @media (min-width: 820px) {
+      .studio-grid {
+        grid-template-columns: 390px 1fr;
+        align-items: start;
+      }
+    }
+
+    .card {
+      background: var(--bg-card);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border: 1px solid var(--border-subtle);
+      border-radius: 24px;
+      padding: 20px;
+      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.65);
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      position: relative;
+    }
+
+    /* Drop Zone / Tap Target */
+    .drop-zone {
+      border: 2px dashed rgba(249, 115, 22, 0.4);
+      background: rgba(14, 20, 34, 0.65);
+      border-radius: 20px;
+      padding: 24px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .drop-zone:hover, .drop-zone.dragover {
+      border-color: var(--accent-orange);
+      background: rgba(249, 115, 22, 0.08);
+      transform: translateY(-1px);
+    }
+
+    .drop-icon-box {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: rgba(249, 115, 22, 0.12);
+      border: 1px solid rgba(249, 115, 22, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      color: #fb923c;
+    }
+
+    .drop-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+
+    .drop-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .paste-hint {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    /* Controls Group */
+    .control-section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-dim);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .select-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+
+    .option-pill {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 9px 4px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .option-pill:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+    }
+
+    .option-pill.selected {
+      background: rgba(249, 115, 22, 0.16);
+      border-color: var(--accent-orange);
+      color: #fb923c;
+      font-weight: 700;
+    }
+
+    .option-pill .pill-sub {
+      font-size: 9px;
+      opacity: 0.75;
+      font-weight: 500;
+    }
+
+    /* Custom Select & Inputs */
+    .custom-select {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 10px 14px;
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      outline: none;
+      width: 100%;
+      cursor: pointer;
+      transition: border-color 0.15s ease;
+    }
+
+    .custom-select:focus {
+      border-color: var(--accent-orange);
+    }
+
+    /* Buttons */
+    .btn-convert-main {
+      background: var(--accent-gradient);
+      border: none;
+      border-radius: 16px;
+      padding: 16px 20px;
+      color: #ffffff;
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      box-shadow: 0 10px 28px var(--accent-orange-glow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      width: 100%;
+    }
+
+    .btn-convert-main:hover:not(:disabled) {
+      background: var(--accent-gradient-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 14px 34px var(--accent-orange-glow);
+    }
+
+    .btn-convert-main:active:not(:disabled) {
+      transform: translateY(1px) scale(0.99);
+    }
+
+    .btn-convert-main:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      box-shadow: none;
+      filter: grayscale(0.5);
+    }
+
+    .action-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 11px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-main);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: var(--border-hover);
+    }
+
+    .btn-secondary:active:not(:disabled) {
+      transform: scale(0.98);
+    }
+
+    .btn-secondary:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    /* Preview Panel */
+    .tab-bar {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: rgba(0, 0, 0, 0.35);
+      padding: 4px;
+      border-radius: 14px;
+      border: 1px solid var(--border-subtle);
+      gap: 4px;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 700;
+      padding: 9px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .tab-btn.active {
+      background: var(--bg-surface-elevated);
+      color: var(--text-main);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .preview-stage {
+      position: relative;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #050811;
+      border: 1px solid var(--border-subtle);
+      min-height: 420px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .preview-canvas-wrap {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .preview-img {
+      max-width: 100%;
+      max-height: 440px;
+      object-fit: contain;
+      display: block;
+      border-radius: 10px;
+    }
+
+    .preview-meta-overlay {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      right: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+    }
+
+    .meta-tag {
+      background: rgba(9, 13, 22, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-subtle);
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #fb923c;
+    }
+
+    .meta-tag.resolution {
+      color: #38bdf8;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Live Toast */
+    .toast {
+      display: none;
+      padding: 12px 16px;
+      border-radius: 14px;
+      font-size: 13px;
+      font-weight: 600;
+      align-items: center;
+      gap: 8px;
+      animation: popIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .toast.success {
+      background: var(--ok-bg);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34d399;
+    }
+
+    .toast.error {
+      background: var(--danger-bg);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #f87171;
+    }
+
+    .toast.loading {
+      background: rgba(249, 115, 22, 0.12);
+      border: 1px solid rgba(249, 115, 22, 0.3);
+      color: #fb923c;
+    }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid currentColor;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes popIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Metadata Inspector Table */
+    .inspector-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .inspector-table th {
+      text-align: left;
+      padding: 8px 10px;
+      color: var(--text-dim);
+      border-bottom: 1px solid var(--border-subtle);
+      font-weight: 700;
+    }
+
+    .inspector-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: var(--text-main);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+    }
+
+    .inspector-table td.tag-name {
+      color: #94a3b8;
+      font-family: inherit;
+    }
+
+    .inspector-table td.injected {
+      color: #fb923c;
+      font-weight: 600;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 8px;
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-layout">
+  
+  <!-- Header -->
+  <header class="header">
+    <div class="brand-group">
+      <div class="brand-logo">🕶️</div>
+      <div class="brand-text">
+        <h1>Ray-Ban Meta Photo Studio</h1>
+        <p>12MP Ultra-Wide 3024×4032 • Meta AI Provenance Engine</p>
+      </div>
+    </div>
+    <div class="header-badges">
+      <div class="pill-badge">Ray-Ban Meta Gen 2</div>
+      <div class="pill-badge secondary">PNG / JPG / WEBP</div>
+    </div>
+  </header>
+
+  <!-- Main Grid -->
+  <div class="studio-grid">
+    
+    <!-- LEFT PANEL: Controls & Settings -->
+    <div class="card">
+      
+      <!-- Drop Zone -->
+      <div class="drop-zone" id="dropZone">
+        <div class="drop-icon-box">📷</div>
+        <div class="drop-title" id="dropTitle">Tap, Drop, or Paste Photo</div>
+        <div class="drop-sub" id="dropSub">Supports PNG, JPG, JPEG, WEBP, AVIF</div>
+        <div class="paste-hint"><span>⌨️</span> <span>Cmd/Ctrl + V to paste</span></div>
+        <input type="file" id="fileInput" accept="image/*,.jpg,.jpeg,.png,.webp,.avif,.bmp">
+      </div>
+
+      <!-- Fit / Framing Mode -->
+      <div class="control-section">
+        <div class="section-label">
+          <span>Framing & Aspect Ratio</span>
+          <span style="color: #fb923c;">3024 × 4032 (3:4)</span>
+        </div>
+        <div class="select-grid" id="fitModes">
+          <div class="option-pill selected" data-fit="cover">
+            <span>Cover</span>
+            <span class="pill-sub">Fill & Crop</span>
+          </div>
+          <div class="option-pill" data-fit="blur">
+            <span>Bokeh</span>
+            <span class="pill-sub">Blurred BG</span>
+          </div>
+          <div class="option-pill" data-fit="contain">
+            <span>Matte</span>
+            <span class="pill-sub">Letterbox</span>
+          </div>
+          <div class="option-pill" data-fit="stretch">
+            <span>Stretch</span>
+            <span class="pill-sub">Direct</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hardware Profile -->
+      <div class="control-section">
+        <div class="section-label">
+          <span>Hardware Model</span>
+          <span style="color: #38bdf8;">f/2.2 • 2.2mm</span>
+        </div>
+        <select class="custom-select" id="modelSelect">
+          <option value="wayfarer" selected>Ray-Ban Meta Gen 2 (Wayfarer)</option>
+          <option value="headliner">Ray-Ban Meta Gen 2 (Headliner)</option>
+          <option value="skyler">Ray-Ban Meta Gen 2 (Skyler)</option>
+          <option value="meta-ai">Meta AI Smart Glasses 2</option>
+          <option value="stories">Ray-Ban Stories (Gen 1)</option>
+        </select>
+      </div>
+
+      <!-- Privacy & Geotag -->
+      <div class="control-section">
+        <div class="section-label">
+          <span>EXIF Geotag & Privacy</span>
+        </div>
+        <select class="custom-select" id="geoSelect">
+          <option value="strip" selected>🔒 Strip All GPS (Zero Tracking)</option>
+          <option value="sf">📍 Spoof: San Francisco, CA</option>
+          <option value="ny">📍 Spoof: New York, NY</option>
+          <option value="london">📍 Spoof: London, UK</option>
+          <option value="tokyo">📍 Spoof: Tokyo, JP</option>
+          <option value="chennai">📍 Spoof: Chennai, IN</option>
+        </select>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <button class="btn-convert-main" id="convertBtn" disabled>
+          <span>⚡</span>
+          <span id="convertBtnLabel">CONVERT & DOWNLOAD</span>
+        </button>
+
+        <div class="action-grid">
+          <button class="btn-secondary" id="copyImgBtn" disabled>
+            <span>📋</span> Copy Image
+          </button>
+          <button class="btn-secondary" id="copyB64Btn" disabled>
+            <span>🔤</span> Copy Base64
+          </button>
+        </div>
+
+        <button class="btn-secondary" id="shareBtn" disabled style="width:100%;">
+          <span>💾</span> Native Share Sheet (iOS / Android)
+        </button>
+      </div>
+
+      <!-- Live Toast -->
+      <div class="toast" id="toast"></div>
+
+    </div>
+
+    <!-- RIGHT PANEL: Preview & Metadata Inspector -->
+    <div class="card" style="min-height: 480px;">
+      
+      <!-- View Mode Tabs -->
+      <div class="tab-bar">
+        <button class="tab-btn active" id="viewPreviewBtn">🖼️ Live Preview</button>
+        <button class="tab-btn" id="viewExifBtn">🔍 EXIF Inspector</button>
+      </div>
+
+      <!-- View: Live Preview -->
+      <div id="previewView">
+        <div class="preview-stage" id="previewStage">
+          <div id="previewPlaceholder" style="text-align: center; color: var(--text-dim); padding: 40px 20px;">
+            <div style="font-size: 40px; margin-bottom: 8px; opacity: 0.6;">🕶️</div>
+            <div style="font-size: 14px; font-weight: 600;">No photo loaded</div>
+            <div style="font-size: 12px; margin-top: 4px;">Paste, drop, or pick an image to preview</div>
+          </div>
+          <div class="preview-canvas-wrap" id="previewCanvasWrap" style="display: none;">
+            <img id="previewImg" class="preview-img" alt="Converted Preview">
+            <div class="preview-meta-overlay">
+              <span class="meta-tag" id="overlayModelTag">Ray-Ban Meta Gen 2</span>
+              <span class="meta-tag resolution" id="overlayResTag">3024 × 4032</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- View: EXIF Inspector -->
+      <div id="exifView" style="display: none;">
+        <div style="background: rgba(0,0,0,0.4); border-radius: 16px; border: 1px solid var(--border-subtle); overflow: hidden; padding: 12px;">
+          <table class="inspector-table">
+            <thead>
+              <tr>
+                <th>Field</th>
+                <th>Injected Value</th>
+              </tr>
+            </thead>
+            <tbody id="exifTableBody">
+              <tr><td class="tag-name">Make</td><td class="injected" id="exifMake">Meta</td></tr>
+              <tr><td class="tag-name">Model</td><td class="injected" id="exifModel">Ray-Ban Meta Smart Glasses</td></tr>
+              <tr><td class="tag-name">Software</td><td class="injected" id="exifSoftware">Meta View 174.0.0</td></tr>
+              <tr><td class="tag-name">Resolution</td><td class="injected">3024 × 4032 px</td></tr>
+              <tr><td class="tag-name">Aperture</td><td class="injected">f/2.2</td></tr>
+              <tr><td class="tag-name">Focal Length</td><td class="injected">2.2 mm (18mm equiv)</td></tr>
+              <tr><td class="tag-name">Color Space</td><td class="injected">sRGB (1)</td></tr>
+              <tr><td class="tag-name">Exif Version</td><td class="injected">0232</td></tr>
+              <tr><td class="tag-name">GPS Status</td><td class="injected" id="exifGps">Stripped / Sanitized</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <footer class="footer">
+    <div>🔒 100% Client-Side Engine • Zero Server Uploads • Fast & Private</div>
+  </footer>
+
+</div>
+
+<!-- Hidden Canvas Engine -->
+<canvas id="workCanvas" width="3024" height="4032" style="display:none;"></canvas>
+
+<script>
+const $ = id => document.getElementById(id);
+
+// Application State (Single Image Focus)
+let currentFile = null;
+let currentSourceDataUrl = null;
+let currentConvertedDataUrl = null;
+let currentPureBase64 = null;
+let activeFit = "cover";
+
+const HARDWARE_SPECS = {
+  wayfarer: { make: "Meta", model: "Ray-Ban Meta Smart Glasses", software: "Meta View 174.0.0", fNumber: [22, 10], focal: [220, 100], focal35: 18 },
+  headliner: { make: "Meta", model: "Ray-Ban Meta Smart Glasses (Headliner)", software: "Meta View 174.0.0", fNumber: [22, 10], focal: [220, 100], focal35: 18 },
+  skyler: { make: "Meta", model: "Ray-Ban Meta Smart Glasses (Skyler)", software: "Meta View 174.0.0", fNumber: [22, 10], focal: [220, 100], focal35: 18 },
+  "meta-ai": { make: "Meta AI", model: "Ray-Ban Meta Smart Glasses 2", software: "Meta View 174.0.0", fNumber: [22, 10], focal: [220, 100], focal35: 18 },
+  stories: { make: "Facebook", model: "Ray-Ban Stories", software: "Facebook View 120.0.0", fNumber: [24, 10], focal: [240, 100], focal35: 20 }
+};
+
+const GEO_PRESETS = {
+  strip: null,
+  sf: { lat: 37.7749, lon: -122.4194, name: "San Francisco, CA" },
+  ny: { lat: 40.7128, lon: -74.0060, name: "New York, NY" },
+  london: { lat: 51.5074, lon: -0.1278, name: "London, UK" },
+  tokyo: { lat: 35.6762, lon: 139.6503, name: "Tokyo, JP" },
+  chennai: { lat: 13.0827, lon: 80.2707, name: "Chennai, IN" }
+};
+
+// Elements
+const dropZone = $("dropZone");
+const fileInput = $("fileInput");
+const convertBtn = $("convertBtn");
+const copyImgBtn = $("copyImgBtn");
+const copyB64Btn = $("copyB64Btn");
+const shareBtn = $("shareBtn");
+const toast = $("toast");
+const previewImg = $("previewImg");
+const previewPlaceholder = $("previewPlaceholder");
+const previewCanvasWrap = $("previewCanvasWrap");
+const modelSelect = $("modelSelect");
+const geoSelect = $("geoSelect");
+const dropTitle = $("dropTitle");
+const dropSub = $("dropSub");
+
+// Tab Switching (Preview vs EXIF Inspector)
+$("viewPreviewBtn").addEventListener("click", () => {
+  $("viewPreviewBtn").classList.add("active");
+  $("viewExifBtn").classList.remove("active");
+  $("previewView").style.display = "block";
+  $("exifView").style.display = "none";
+});
+
+$("viewExifBtn").addEventListener("click", () => {
+  $("viewExifBtn").classList.add("active");
+  $("viewPreviewBtn").classList.remove("active");
+  $("exifView").style.display = "block";
+  $("previewView").style.display = "none";
+  updateExifTable();
+});
+
+// Framing pill selection
+document.querySelectorAll("#fitModes .option-pill").forEach(pill => {
+  pill.addEventListener("click", () => {
+    document.querySelectorAll("#fitModes .option-pill").forEach(p => p.classList.remove("selected"));
+    pill.classList.add("selected");
+    activeFit = pill.getAttribute("data-fit");
+    if (currentSourceDataUrl) {
+      // Re-enable convert
+      convertBtn.disabled = false;
+      showToast("Fit mode changed. Click Convert to apply.", "loading");
+    }
+  });
+});
+
+modelSelect.addEventListener("change", () => {
+  $("overlayModelTag").textContent = HARDWARE_SPECS[modelSelect.value].model;
+  updateExifTable();
+});
+
+geoSelect.addEventListener("change", updateExifTable);
+
+// Drop & Paste Events
+dropZone.addEventListener("click", () => fileInput.click());
+fileInput.addEventListener("change", e => {
+  const f = e.target.files?.[0];
+  if (f) loadFile(f);
+});
+
+dropZone.addEventListener("dragover", e => { e.preventDefault(); dropZone.classList.add("dragover"); });
+dropZone.addEventListener("dragleave", () => dropZone.classList.remove("dragover"));
+dropZone.addEventListener("drop", e => {
+  e.preventDefault();
+  dropZone.classList.remove("dragover");
+  const f = e.dataTransfer.files?.[0];
+  if (f) loadFile(f);
+});
+
+window.addEventListener("paste", e => {
+  const items = e.clipboardData?.items;
+  if (!items) return;
+  for (let item of items) {
+    if (item.type.indexOf("image") !== -1) {
+      const f = item.getAsFile();
+      if (f) loadFile(f);
+      break;
+    }
+  }
+});
+
+// File Loader
+function loadFile(file) {
+  if (!file.type.startsWith("image/") && !/\.(jpe?g|png|webp|avif|bmp)$/i.test(file.name)) {
+    showToast("Please select an image file (PNG, JPG, WEBP, etc.)", "error");
+    return;
+  }
+
+  currentFile = file;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    currentSourceDataUrl = ev.target.result;
+    currentConvertedDataUrl = null;
+    currentPureBase64 = null;
+
+    // Show source image in preview immediately
+    previewImg.src = currentSourceDataUrl;
+    previewPlaceholder.style.display = "none";
+    previewCanvasWrap.style.display = "flex";
+    $("overlayModelTag").textContent = HARDWARE_SPECS[modelSelect.value].model;
+    $("overlayResTag").textContent = "Original Loaded";
+
+    dropTitle.textContent = file.name || "Photo Loaded";
+    dropSub.textContent = `${(file.size / 1024).toFixed(1)} KB — Ready to convert`;
+
+    convertBtn.disabled = false;
+    copyImgBtn.disabled = true;
+    copyB64Btn.disabled = true;
+    shareBtn.disabled = true;
+
+    showToast("Image loaded. Click 'CONVERT & DOWNLOAD'!", "success");
+    updateExifTable();
+  };
+  reader.readAsDataURL(file);
+}
+
+// Binary Helper (zero fetch overhead)
+function dataUrlToBlob(dataUrl) {
+  const parts = dataUrl.split(',');
+  const mime = parts[0].match(/:(.*?);/)[1] || 'image/jpeg';
+  const bstr = atob(parts[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new Blob([u8arr], { type: mime });
+}
+
+// Canvas & Rescaling Engine
+function renderRayBanCanvas(dataUrl, fitMode) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = $("workCanvas");
+      const ctx = canvas.getContext("2d");
+      const TW = 3024;
+      const TH = 4032;
+
+      ctx.clearRect(0, 0, TW, TH);
+
+      if (fitMode === "cover") {
+        const srcW = img.width;
+        const srcH = img.height;
+        const srcRatio = srcW / srcH;
+        const targetRatio = TW / TH;
+        let nw, nh;
+
+        if (srcRatio > targetRatio) {
+          nh = TH;
+          nw = srcW * (TH / srcH);
+        } else {
+          nw = TW;
+          nh = srcH * (TW / srcW);
+        }
+
+        const ox = (TW - nw) / 2;
+        const oy = (TH - nh) / 2;
+        ctx.fillStyle = "#090d16";
+        ctx.fillRect(0, 0, TW, TH);
+        ctx.drawImage(img, ox, oy, nw, nh);
+
+      } else if (fitMode === "blur") {
+        // Aesthetic Bokeh Blur
+        ctx.save();
+        ctx.filter = "blur(60px) brightness(0.75)";
+        ctx.drawImage(img, -80, -80, TW + 160, TH + 160);
+        ctx.restore();
+
+        // Foreground contained with subtle shadow
+        const margin = 80;
+        const maxW = TW - (margin * 2);
+        const maxH = TH - (margin * 2);
+        const ratio = Math.min(maxW / img.width, maxH / img.height);
+        const fw = img.width * ratio;
+        const fh = img.height * ratio;
+        const fx = (TW - fw) / 2;
+        const fy = (TH - fh) / 2;
+
+        ctx.save();
+        ctx.shadowColor = "rgba(0, 0, 0, 0.6)";
+        ctx.shadowBlur = 32;
+        ctx.shadowOffsetY = 12;
+        ctx.drawImage(img, fx, fy, fw, fh);
+        ctx.restore();
+
+      } else if (fitMode === "contain") {
+        ctx.fillStyle = "#090d16";
+        ctx.fillRect(0, 0, TW, TH);
+        const ratio = Math.min(TW / img.width, TH / img.height);
+        const cw = img.width * ratio;
+        const ch = img.height * ratio;
+        const cx = (TW - cw) / 2;
+        const cy = (TH - ch) / 2;
+        ctx.drawImage(img, cx, cy, cw, ch);
+
+      } else if (fitMode === "stretch") {
+        ctx.drawImage(img, 0, 0, TW, TH);
+      }
+
+      resolve(canvas.toDataURL("image/jpeg", 0.95));
+    };
+    img.onerror = reject;
+    img.src = dataUrl;
+  });
+}
+
+function buildMetaExif(modelKey, geoKey) {
+  const spec = HARDWARE_SPECS[modelKey] || HARDWARE_SPECS.wayfarer;
+  const now = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  const dtStr = `${now.getFullYear()}:${pad(now.getMonth()+1)}:${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+
+  const zeroth = {};
+  zeroth[piexif.ImageIFD.Make] = spec.make;
+  zeroth[piexif.ImageIFD.Model] = spec.model;
+  zeroth[piexif.ImageIFD.Software] = spec.software;
+  zeroth[piexif.ImageIFD.Orientation] = 1;
+  zeroth[piexif.ImageIFD.DateTime] = dtStr;
+  zeroth[piexif.ImageIFD.XResolution] = [72, 1];
+  zeroth[piexif.ImageIFD.YResolution] = [72, 1];
+
+  const exif = {};
+  exif[piexif.ExifIFD.ExifVersion] = "0232";
+  exif[piexif.ExifIFD.DateTimeOriginal] = dtStr;
+  exif[piexif.ExifIFD.DateTimeDigitized] = dtStr;
+  exif[piexif.ExifIFD.ColorSpace] = 1; // sRGB
+  exif[piexif.ExifIFD.PixelXDimension] = 3024;
+  exif[piexif.ExifIFD.PixelYDimension] = 4032;
+  exif[piexif.ExifIFD.FNumber] = spec.fNumber;
+  exif[piexif.ExifIFD.FocalLength] = spec.focal;
+  exif[piexif.ExifIFD.FocalLengthIn35mmFilm] = spec.focal35;
+  exif[piexif.ExifIFD.ExposureProgram] = 2; // Normal
+  exif[piexif.ExifIFD.ISOSpeedRatings] = 100;
+  exif[piexif.ExifIFD.MeteringMode] = 2; // Center-weighted
+  exif[piexif.ExifIFD.Flash] = 0;
+  exif[piexif.ExifIFD.WhiteBalance] = 0;
+
+  const gps = {};
+  const geo = GEO_PRESETS[geoKey];
+  if (geo) {
+    const degToDms = degFloat => {
+      const abs = Math.abs(degFloat);
+      const d = Math.floor(abs);
+      const mFloat = (abs - d) * 60;
+      const m = Math.floor(mFloat);
+      const s = Math.round((mFloat - m) * 60 * 100);
+      return [[d, 1], [m, 1], [s, 100]];
+    };
+    gps[piexif.GPSIFD.GPSLatitudeRef] = geo.lat >= 0 ? "N" : "S";
+    gps[piexif.GPSIFD.GPSLatitude] = degToDms(geo.lat);
+    gps[piexif.GPSIFD.GPSLongitudeRef] = geo.lon >= 0 ? "E" : "W";
+    gps[piexif.GPSIFD.GPSLongitude] = degToDms(geo.lon);
+  }
+
+  return { "0th": zeroth, "Exif": exif, "GPS": gps, "1st": {}, "thumbnail": null };
+}
+
+async function convertImageCore() {
+  const correctedJpeg = await renderRayBanCanvas(currentSourceDataUrl, activeFit);
+  const exifObj = buildMetaExif(modelSelect.value, geoSelect.value);
+  const exifBytes = piexif.dump(exifObj);
+  const finalJpeg = piexif.insert(exifBytes, correctedJpeg);
+  
+  currentConvertedDataUrl = finalJpeg;
+  currentPureBase64 = finalJpeg.split(",")[1];
+
+  // Update preview
+  previewImg.src = finalJpeg;
+  $("overlayResTag").textContent = "3024 × 4032 Ready";
+  $("overlayModelTag").textContent = HARDWARE_SPECS[modelSelect.value].model;
+
+  copyImgBtn.disabled = false;
+  copyB64Btn.disabled = false;
+  shareBtn.disabled = false;
+  updateExifTable();
+  return finalJpeg;
+}
+
+// Download Helper
+function triggerDownload(dataUrl, filename) {
+  const blob = dataUrlToBlob(dataUrl);
+  const blobUrl = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.style.display = "none";
+  a.href = blobUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    URL.revokeObjectURL(blobUrl);
+    a.remove();
+  }, 3000);
+}
+
+// ⚡ PRIMARY CONVERT & DOWNLOAD
+convertBtn.addEventListener("click", async () => {
+  if (!currentSourceDataUrl) {
+    fileInput.click();
+    return;
+  }
+
+  convertBtn.disabled = true;
+  showToast("Rendering 3024×4032 & Injecting Meta AI EXIF...", "loading", true);
+
+  try {
+    const finalDataUrl = await convertImageCore();
+    
+    // Auto-copy pure base64 to clipboard if possible
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(currentPureBase64);
+      }
+    } catch(e) {
+      console.warn("Clipboard background write ignored.");
+    }
+
+    // Trigger instant download
+    const cleanName = (currentFile?.name || "photo").replace(/\.[^/.]+$/, "") + "_meta_3024x4032.jpg";
+    triggerDownload(finalDataUrl, cleanName);
+
+    showToast("✅ Converted! Base64 copied & Photo downloaded.", "success");
+  } catch (err) {
+    console.error("Conversion error:", err);
+    showToast("Conversion failed: " + (err.message || "Unknown error"), "error");
+  } finally {
+    convertBtn.disabled = false;
+  }
+});
+
+// Copy Image Raster directly to OS Clipboard
+copyImgBtn.addEventListener("click", async () => {
+  if (!currentConvertedDataUrl) return;
+
+  try {
+    const blob = dataUrlToBlob(currentConvertedDataUrl);
+    // Draw onto canvas to extract PNG blob for OS clipboard compatibility
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement("canvas");
+      c.width = img.width;
+      c.height = img.height;
+      c.getContext("2d").drawImage(img, 0, 0);
+      c.toBlob(async pngBlob => {
+        try {
+          await navigator.clipboard.write([
+            new ClipboardItem({ "image/png": pngBlob })
+          ]);
+          showToast("✅ Image copied to system clipboard! (Paste anywhere)", "success");
+        } catch(e) {
+          showToast("Direct image write requires secure HTTPS context.", "error");
+        }
+      }, "image/png");
+    };
+    img.src = currentConvertedDataUrl;
+  } catch (err) {
+    showToast("Clipboard write error.", "error");
+  }
+});
+
+// Copy Base64
+copyB64Btn.addEventListener("click", async () => {
+  if (!currentPureBase64) return;
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(currentPureBase64);
+    } else {
+      const ta = document.createElement("textarea");
+      ta.value = currentPureBase64;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+    }
+    showToast("✅ Base64 string copied to clipboard!", "success");
+  } catch (e) {
+    showToast("Clipboard restricted by browser.", "error");
+  }
+});
+
+// Native Share Sheet
+shareBtn.addEventListener("click", async () => {
+  if (!currentConvertedDataUrl) return;
+  
+  const blob = dataUrlToBlob(currentConvertedDataUrl);
+  const cleanName = (currentFile?.name || "photo").replace(/\.[^/.]+$/, "") + "_meta_3024x4032.jpg";
+  const file = new File([blob], cleanName, { type: "image/jpeg" });
+
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: "Ray-Ban Meta Photo", text: "Converted Ray-Ban Meta 3024×4032" });
+      return;
+    } catch (e) {
+      if (e.name === "AbortError") return;
+    }
+  }
+
+  // Fallback to direct download
+  triggerDownload(currentConvertedDataUrl, cleanName);
+  showToast("Download triggered.", "success");
+});
+
+// Toast Helper
+function showToast(msg, type = "success", isLoading = false) {
+  toast.className = `toast ${type}`;
+  toast.style.display = "flex";
+  toast.innerHTML = isLoading ? `<div class="spinner"></div><span>${msg}</span>` : `<span>${type === 'success' ? '⚡' : '❌'}</span><span>${msg}</span>`;
+  if (!isLoading) {
+    setTimeout(() => { toast.style.display = "none"; }, 4500);
+  }
+}
+
+function updateExifTable() {
+  const spec = HARDWARE_SPECS[modelSelect.value];
+  $("exifMake").textContent = spec.make;
+  $("exifModel").textContent = spec.model;
+  $("exifSoftware").textContent = spec.software;
+  const geo = GEO_PRESETS[geoSelect.value];
+  $("exifGps").textContent = geo ? `📍 ${geo.name}` : "🔒 Stripped / Sanitized";
+}
+</script>
+
+</body>
+</html>
