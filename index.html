@@ -21,7 +21,7 @@
   <style>
     :root {
       --bg: #080b12;
-      --card-bg: rgba(15, 20, 32, 0.9);
+      --card-bg: rgba(15, 20, 32, 0.92);
       --card-border: rgba(255, 255, 255, 0.08);
       --input-bg: rgba(0, 0, 0, 0.35);
       --accent: #f97316;
@@ -328,6 +328,21 @@
       cursor: not-allowed;
     }
 
+    /* Story Instructions Box */
+    .info-box {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .info-box strong {
+      color: #fb923c;
+    }
+
     /* Status Toast */
     .toast {
       display: none;
@@ -416,27 +431,34 @@
 
     <!-- Model Selection -->
     <div class="form-group">
-      <label class="form-label">Glasses Model</label>
+      <label class="form-label">Hardware Metadata Profile</label>
       <select class="select-input" id="modelSelect">
-        <option value="wayfarer" selected>Ray-Ban Meta (Wayfarer)</option>
+        <option value="meta-ai" selected>Meta AI — Ray-Ban Meta Smart Glasses 2 (Default)</option>
+        <option value="wayfarer">Ray-Ban Meta (Wayfarer)</option>
         <option value="headliner">Ray-Ban Meta (Headliner)</option>
         <option value="skyler">Ray-Ban Meta (Skyler)</option>
         <option value="stories">Ray-Ban Stories (Gen 1)</option>
       </select>
     </div>
 
-    <!-- Actions -->
+    <!-- Primary Convert Action -->
     <button class="btn-main" id="convertBtn" disabled>
       <span>Convert & Download</span>
     </button>
 
+    <!-- Secondary Actions -->
     <div class="button-row">
-      <button class="btn-secondary" id="copyImgBtn" disabled>
-        <span>Copy Image</span>
+      <button class="btn-secondary" id="shareBtn" disabled>
+        <span>Share to Story / Save</span>
       </button>
       <button class="btn-secondary" id="copyB64Btn" disabled>
         <span>Copy Base64</span>
       </button>
+    </div>
+
+    <!-- Story Tip -->
+    <div class="info-box">
+      <strong>Instagram Story tip:</strong> Download the converted photo directly to your phone. Avoid sending through WhatsApp or Messenger first, as chat apps compress the photo and delete camera EXIF tags.
     </div>
 
     <!-- Status Toast -->
@@ -463,10 +485,11 @@ let pureBase64 = null;
 let activeFit = "cover";
 
 const MODELS = {
-  wayfarer: { make: "Meta", model: "Ray-Ban Meta Smart Glasses", software: "Meta View 174.0.0", fNumber: [22, 10], focal: [220, 100], focal35: 18 },
-  headliner: { make: "Meta", model: "Ray-Ban Meta Smart Glasses (Headliner)", software: "Meta View 174.0.0", fNumber: [22, 10], focal: [220, 100], focal35: 18 },
-  skyler: { make: "Meta", model: "Ray-Ban Meta Smart Glasses (Skyler)", software: "Meta View 174.0.0", fNumber: [22, 10], focal: [220, 100], focal35: 18 },
-  stories: { make: "Facebook", model: "Ray-Ban Stories", software: "Facebook View 120.0.0", fNumber: [24, 10], focal: [240, 100], focal35: 20 }
+  "meta-ai": { make: "Meta AI", model: "Ray-Ban Meta Smart Glasses 2", software: "Meta View 174.0.0", fNumber: [22, 10], focal: [220, 100], focal35: 18 },
+  "wayfarer": { make: "Meta", model: "Ray-Ban Meta Smart Glasses", software: "Meta View 174.0.0", fNumber: [22, 10], focal: [220, 100], focal35: 18 },
+  "headliner": { make: "Meta", model: "Ray-Ban Meta Smart Glasses (Headliner)", software: "Meta View 174.0.0", fNumber: [22, 10], focal: [220, 100], focal35: 18 },
+  "skyler": { make: "Meta", model: "Ray-Ban Meta Smart Glasses (Skyler)", software: "Meta View 174.0.0", fNumber: [22, 10], focal: [220, 100], focal35: 18 },
+  "stories": { make: "Facebook", model: "Ray-Ban Stories", software: "Facebook View 120.0.0", fNumber: [24, 10], focal: [240, 100], focal35: 20 }
 };
 
 const dropZone = $("dropZone");
@@ -475,7 +498,7 @@ const previewBox = $("previewBox");
 const previewImg = $("previewImg");
 const replaceBtn = $("replaceBtn");
 const convertBtn = $("convertBtn");
-const copyImgBtn = $("copyImgBtn");
+const shareBtn = $("shareBtn");
 const copyB64Btn = $("copyB64Btn");
 const toast = $("toast");
 const modelSelect = $("modelSelect");
@@ -539,7 +562,7 @@ function loadFile(file) {
     previewBox.style.display = "block";
 
     convertBtn.disabled = false;
-    copyImgBtn.disabled = true;
+    shareBtn.disabled = true;
     copyB64Btn.disabled = true;
 
     hideToast();
@@ -592,13 +615,11 @@ function renderCanvas(dataUrl, fitMode) {
         ctx.drawImage(img, ox, oy, nw, nh);
 
       } else if (fitMode === "blur") {
-        // Blur background
         ctx.save();
         ctx.filter = "blur(50px) brightness(0.75)";
         ctx.drawImage(img, -60, -60, TW + 120, TH + 120);
         ctx.restore();
 
-        // Contained foreground
         const margin = 80;
         const maxW = TW - (margin * 2);
         const maxH = TH - (margin * 2);
@@ -635,11 +656,10 @@ function renderCanvas(dataUrl, fitMode) {
 
 function buildExif(modelKey) {
   if (typeof piexif === 'undefined') {
-    console.warn("piexif library not ready");
     return null;
   }
 
-  const spec = MODELS[modelKey] || MODELS.wayfarer;
+  const spec = MODELS[modelKey] || MODELS["meta-ai"];
   const now = new Date();
   const pad = n => String(n).padStart(2, '0');
   const dtStr = `${now.getFullYear()}:${pad(now.getMonth()+1)}:${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
@@ -647,7 +667,6 @@ function buildExif(modelKey) {
   const zeroth = {};
   zeroth[piexif.ImageIFD.Make] = spec.make;
   zeroth[piexif.ImageIFD.Model] = spec.model;
-  zeroth[piexif.ImageIFD.Software] = spec.software;
   zeroth[piexif.ImageIFD.Orientation] = 1;
   zeroth[piexif.ImageIFD.DateTime] = dtStr;
   zeroth[piexif.ImageIFD.XResolution] = [72, 1];
@@ -712,7 +731,7 @@ convertBtn.addEventListener("click", async () => {
     const filename = (currentFile?.name || "photo").replace(/\.[^/.]+$/, "") + "_rayban_3024x4032.jpg";
     triggerDownload(finalJpeg, filename);
 
-    copyImgBtn.disabled = false;
+    shareBtn.disabled = false;
     copyB64Btn.disabled = false;
     showToast("Photo converted and downloaded.", "success");
   } catch (err) {
@@ -723,32 +742,30 @@ convertBtn.addEventListener("click", async () => {
   }
 });
 
-// Copy Image
-copyImgBtn.addEventListener("click", async () => {
+// Share Sheet
+shareBtn.addEventListener("click", async () => {
   if (!convertedDataUrl) return;
 
-  try {
-    const img = new Image();
-    img.onload = () => {
-      const c = document.createElement("canvas");
-      c.width = img.width;
-      c.height = img.height;
-      c.getContext("2d").drawImage(img, 0, 0);
-      c.toBlob(async blob => {
-        try {
-          await navigator.clipboard.write([
-            new ClipboardItem({ "image/png": blob })
-          ]);
-          showToast("Image copied to clipboard.", "success");
-        } catch(e) {
-          showToast("Clipboard copy requires HTTPS.", "error");
-        }
-      }, "image/png");
-    };
-    img.src = convertedDataUrl;
-  } catch (err) {
-    showToast("Could not copy image.", "error");
+  const blob = dataUrlToBlob(convertedDataUrl);
+  const filename = (currentFile?.name || "photo").replace(/\.[^/.]+$/, "") + "_rayban_3024x4032.jpg";
+  const file = new File([blob], filename, { type: "image/jpeg" });
+
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({
+        files: [file],
+        title: "Ray-Ban Meta Photo",
+        text: "Converted Ray-Ban Meta photo (3024×4032)"
+      });
+      return;
+    } catch (e) {
+      if (e.name === "AbortError") return;
+    }
   }
+
+  // Fallback
+  triggerDownload(convertedDataUrl, filename);
+  showToast("Photo downloaded to device.", "success");
 });
 
 // Copy Base64
