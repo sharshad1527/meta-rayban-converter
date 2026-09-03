@@ -25,7 +25,6 @@
       --card-border: rgba(255, 255, 255, 0.08);
       --input-bg: rgba(0, 0, 0, 0.35);
       --accent: #f97316;
-      --accent-hover: #fb923c;
       --accent-gradient: linear-gradient(135deg, #ff6b00 0%, #f97316 100%);
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
@@ -198,7 +197,7 @@
       background: rgba(0, 0, 0, 0.9);
     }
 
-    /* Form Rows */
+    /* Fit Options Segmented Control */
     .form-group {
       display: flex;
       flex-direction: column;
@@ -209,9 +208,16 @@
       font-size: 12px;
       font-weight: 600;
       color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
     }
 
-    /* Fit Options Segmented Control */
+    .specs-tag {
+      color: #fb923c;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+    }
+
     .segmented-control {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -239,26 +245,6 @@
       background: rgba(249, 115, 22, 0.2);
       color: #fb923c;
       font-weight: 700;
-    }
-
-    /* Select Inputs */
-    .select-input {
-      background: var(--input-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 12px;
-      padding: 10px 12px;
-      color: var(--text-main);
-      font-family: inherit;
-      font-size: 13px;
-      font-weight: 600;
-      outline: none;
-      width: 100%;
-      cursor: pointer;
-      transition: border-color 150ms var(--ease);
-    }
-
-    .select-input:focus {
-      border-color: var(--accent);
     }
 
     /* Buttons */
@@ -328,7 +314,7 @@
       cursor: not-allowed;
     }
 
-    /* Story Instructions Box */
+    /* Story Tip Box */
     .info-box {
       background: rgba(0, 0, 0, 0.25);
       border: 1px solid rgba(255, 255, 255, 0.05);
@@ -399,7 +385,7 @@
   <header class="header">
     <div class="header-icon">🕶️</div>
     <h1>Ray-Ban Meta Converter</h1>
-    <p class="subtitle">Convert any photo to 3024×4032 portrait format with Ray-Ban Meta camera metadata.</p>
+    <p class="subtitle">Convert any photo to 3024×4032 with authentic Meta AI & Ray-Ban Smart Glasses EXIF.</p>
   </header>
 
   <main class="card">
@@ -408,7 +394,7 @@
     <div class="drop-zone" id="dropZone">
       <div class="drop-icon">📷</div>
       <div class="drop-text-main" id="dropMainText">Select or drop a photo</div>
-      <div class="drop-text-sub">Supports PNG, JPG, WEBP, AVIF</div>
+      <div class="drop-text-sub">Supports PNG, JPG, JPEG, WEBP, AVIF</div>
       <div class="keyboard-hint">Ctrl + V to paste</div>
       <input type="file" id="fileInput" accept="image/*,.jpg,.jpeg,.png,.webp,.avif,.bmp">
     </div>
@@ -421,24 +407,15 @@
 
     <!-- Framing Mode -->
     <div class="form-group">
-      <label class="form-label">Framing (3024 × 4032)</label>
+      <label class="form-label">
+        <span>Framing Mode</span>
+        <span class="specs-tag">3024 × 4032</span>
+      </label>
       <div class="segmented-control" id="fitSelector">
-        <button class="seg-btn active" data-fit="cover">Crop to Fill</button>
+        <button class="seg-btn active" data-fit="cover">Fill (Standard)</button>
         <button class="seg-btn" data-fit="blur">Blur Fill</button>
         <button class="seg-btn" data-fit="contain">Fit</button>
       </div>
-    </div>
-
-    <!-- Model Selection -->
-    <div class="form-group">
-      <label class="form-label">Hardware Metadata Profile</label>
-      <select class="select-input" id="modelSelect">
-        <option value="meta-ai" selected>Meta AI — Ray-Ban Meta Smart Glasses 2 (Default)</option>
-        <option value="wayfarer">Ray-Ban Meta (Wayfarer)</option>
-        <option value="headliner">Ray-Ban Meta (Headliner)</option>
-        <option value="skyler">Ray-Ban Meta (Skyler)</option>
-        <option value="stories">Ray-Ban Stories (Gen 1)</option>
-      </select>
     </div>
 
     <!-- Primary Convert Action -->
@@ -458,7 +435,7 @@
 
     <!-- Story Tip -->
     <div class="info-box">
-      <strong>Instagram Story tip:</strong> Download the converted photo directly to your phone. Avoid sending through WhatsApp or Messenger first, as chat apps compress the photo and delete camera EXIF tags.
+      <strong>Instagram Story note:</strong> Download directly from this page on your phone. Do not send through WhatsApp/Telegram first, as chat apps compress the photo and delete camera EXIF metadata.
     </div>
 
     <!-- Status Toast -->
@@ -467,30 +444,19 @@
   </main>
 
   <footer class="footer">
-    100% private. Everything runs locally in your browser.
+    100% private. Everything is processed locally in your browser.
   </footer>
 
 </div>
-
-<!-- Hidden Canvas -->
-<canvas id="workCanvas" width="3024" height="4032" style="display:none;"></canvas>
 
 <script>
 const $ = id => document.getElementById(id);
 
 let currentFile = null;
 let sourceDataUrl = null;
-let convertedDataUrl = null;
+let finalDataUrl = null;
 let pureBase64 = null;
 let activeFit = "cover";
-
-const MODELS = {
-  "meta-ai": { make: "Meta AI", model: "Ray-Ban Meta Smart Glasses 2", software: "Meta View 174.0.0", fNumber: [22, 10], focal: [220, 100], focal35: 18 },
-  "wayfarer": { make: "Meta", model: "Ray-Ban Meta Smart Glasses", software: "Meta View 174.0.0", fNumber: [22, 10], focal: [220, 100], focal35: 18 },
-  "headliner": { make: "Meta", model: "Ray-Ban Meta Smart Glasses (Headliner)", software: "Meta View 174.0.0", fNumber: [22, 10], focal: [220, 100], focal35: 18 },
-  "skyler": { make: "Meta", model: "Ray-Ban Meta Smart Glasses (Skyler)", software: "Meta View 174.0.0", fNumber: [22, 10], focal: [220, 100], focal35: 18 },
-  "stories": { make: "Facebook", model: "Ray-Ban Stories", software: "Facebook View 120.0.0", fNumber: [24, 10], focal: [240, 100], focal35: 20 }
-};
 
 const dropZone = $("dropZone");
 const fileInput = $("fileInput");
@@ -501,7 +467,6 @@ const convertBtn = $("convertBtn");
 const shareBtn = $("shareBtn");
 const copyB64Btn = $("copyB64Btn");
 const toast = $("toast");
-const modelSelect = $("modelSelect");
 
 // Fit Mode Selection
 document.querySelectorAll("#fitSelector .seg-btn").forEach(btn => {
@@ -546,7 +511,7 @@ window.addEventListener("paste", e => {
 
 function loadFile(file) {
   if (!file.type.startsWith("image/") && !/\.(jpe?g|png|webp|avif|bmp)$/i.test(file.name)) {
-    showToast("Please choose an image file (PNG, JPG, WEBP).", "error");
+    showToast("Please select a JPG, PNG, or WEBP image.", "error");
     return;
   }
 
@@ -554,7 +519,7 @@ function loadFile(file) {
   const reader = new FileReader();
   reader.onload = ev => {
     sourceDataUrl = ev.target.result;
-    convertedDataUrl = null;
+    finalDataUrl = null;
     pureBase64 = null;
 
     previewImg.src = sourceDataUrl;
@@ -570,64 +535,52 @@ function loadFile(file) {
   reader.readAsDataURL(file);
 }
 
-function dataUrlToBlob(dataUrl) {
-  const parts = dataUrl.split(',');
-  const mime = parts[0].match(/:(.*?);/)[1] || 'image/jpeg';
-  const bstr = atob(parts[1]);
-  let n = bstr.length;
-  const u8arr = new Uint8Array(n);
-  while (n--) {
-    u8arr[n] = bstr.charCodeAt(n);
+// 1:1 Reference from source repo: Read original orientation
+function readOrientation(dataUrl) {
+  try {
+    const exif = piexif.load(dataUrl);
+    return exif["0th"][piexif.ImageIFD.Orientation] || 1;
+  } catch (e) {
+    return 1;
   }
-  return new Blob([u8arr], { type: mime });
 }
 
-function renderCanvas(dataUrl, fitMode) {
+// 1:1 Reference from source repo: Draw corrected 3024x4032 canvas
+function drawCorrected(dataUrl, targetW, targetH, orientation, fitMode) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
-      const canvas = $("workCanvas");
+      const canvas = document.createElement("canvas");
+      const rotate90 = orientation >= 5 && orientation <= 8;
+      canvas.width = rotate90 ? targetH : targetW;
+      canvas.height = rotate90 ? targetW : targetH;
       const ctx = canvas.getContext("2d");
-      const TW = 3024;
-      const TH = 4032;
 
-      ctx.clearRect(0, 0, TW, TH);
+      switch (orientation) {
+        case 2: ctx.setTransform(-1, 0, 0, 1, targetW, 0); break;
+        case 3: ctx.setTransform(-1, 0, 0, -1, targetW, targetH); break;
+        case 4: ctx.setTransform(1, 0, 0, -1, 0, targetH); break;
+        case 5: ctx.setTransform(0, 1, 1, 0, 0, 0); break;
+        case 6: ctx.setTransform(0, 1, -1, 0, targetH, 0); break;
+        case 7: ctx.setTransform(0, -1, -1, 0, targetH, targetW); break;
+        case 8: ctx.setTransform(0, -1, 1, 0, 0, targetW); break;
+        default: ctx.setTransform(1, 0, 0, 1, 0, 0);
+      }
 
-      if (fitMode === "cover") {
-        const srcW = img.width;
-        const srcH = img.height;
-        const srcRatio = srcW / srcH;
-        const targetRatio = TW / TH;
-        let nw, nh;
-
-        if (srcRatio > targetRatio) {
-          nh = TH;
-          nw = srcW * (TH / srcH);
-        } else {
-          nw = TW;
-          nh = srcH * (TW / srcW);
-        }
-
-        const ox = (TW - nw) / 2;
-        const oy = (TH - nh) / 2;
-        ctx.fillStyle = "#080b12";
-        ctx.fillRect(0, 0, TW, TH);
-        ctx.drawImage(img, ox, oy, nw, nh);
-
-      } else if (fitMode === "blur") {
+      if (fitMode === "blur") {
         ctx.save();
         ctx.filter = "blur(50px) brightness(0.75)";
-        ctx.drawImage(img, -60, -60, TW + 120, TH + 120);
+        ctx.drawImage(img, -60, -60, targetW + 120, targetH + 120);
         ctx.restore();
 
         const margin = 80;
-        const maxW = TW - (margin * 2);
-        const maxH = TH - (margin * 2);
+        const maxW = targetW - (margin * 2);
+        const maxH = targetH - (margin * 2);
         const ratio = Math.min(maxW / img.width, maxH / img.height);
         const fw = img.width * ratio;
         const fh = img.height * ratio;
-        const fx = (TW - fw) / 2;
-        const fy = (TH - fh) / 2;
+        const fx = (targetW - fw) / 2;
+        const fy = (targetH - fh) / 2;
 
         ctx.save();
         ctx.shadowColor = "rgba(0, 0, 0, 0.5)";
@@ -635,16 +588,18 @@ function renderCanvas(dataUrl, fitMode) {
         ctx.shadowOffsetY = 8;
         ctx.drawImage(img, fx, fy, fw, fh);
         ctx.restore();
-
       } else if (fitMode === "contain") {
         ctx.fillStyle = "#080b12";
-        ctx.fillRect(0, 0, TW, TH);
-        const ratio = Math.min(TW / img.width, TH / img.height);
+        ctx.fillRect(0, 0, targetW, targetH);
+        const ratio = Math.min(targetW / img.width, targetH / img.height);
         const cw = img.width * ratio;
         const ch = img.height * ratio;
-        const cx = (TW - cw) / 2;
-        const cy = (TH - ch) / 2;
+        const cx = (targetW - cw) / 2;
+        const cy = (targetH - ch) / 2;
         ctx.drawImage(img, cx, cy, cw, ch);
+      } else {
+        // Direct draw
+        ctx.drawImage(img, 0, 0, targetW, targetH);
       }
 
       resolve(canvas.toDataURL("image/jpeg", 0.95));
@@ -654,41 +609,43 @@ function renderCanvas(dataUrl, fitMode) {
   });
 }
 
-function buildExif(modelKey) {
-  if (typeof piexif === 'undefined') {
-    return null;
+// 1:1 Reference from source repo: Build authentic Meta AI & Ray-Ban Meta Glasses EXIF
+function buildExif(dataUrl) {
+  let exif;
+  try {
+    exif = piexif.load(dataUrl);
+  } catch (e) {
+    exif = { "0th": {}, "Exif": {}, "GPS": {}, "1st": {}, "thumbnail": null };
   }
 
-  const spec = MODELS[modelKey] || MODELS["meta-ai"];
-  const now = new Date();
-  const pad = n => String(n).padStart(2, '0');
-  const dtStr = `${now.getFullYear()}:${pad(now.getMonth()+1)}:${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+  exif["GPS"] = {};
+  delete exif["0th"][piexif.ImageIFD.Software];
+  delete exif["0th"][piexif.ImageIFD.HostComputer];
 
-  const zeroth = {};
-  zeroth[piexif.ImageIFD.Make] = spec.make;
-  zeroth[piexif.ImageIFD.Model] = spec.model;
-  zeroth[piexif.ImageIFD.Orientation] = 1;
-  zeroth[piexif.ImageIFD.DateTime] = dtStr;
-  zeroth[piexif.ImageIFD.XResolution] = [72, 1];
-  zeroth[piexif.ImageIFD.YResolution] = [72, 1];
+  delete exif["Exif"][piexif.ExifIFD.MakerNote];
+  delete exif["Exif"][piexif.ExifIFD.LensMake];
+  delete exif["Exif"][piexif.ExifIFD.LensModel];
+  delete exif["Exif"][piexif.ExifIFD.LensSpecification];
 
-  const exif = {};
-  exif[piexif.ExifIFD.ExifVersion] = "0232";
-  exif[piexif.ExifIFD.DateTimeOriginal] = dtStr;
-  exif[piexif.ExifIFD.DateTimeDigitized] = dtStr;
-  exif[piexif.ExifIFD.ColorSpace] = 1;
-  exif[piexif.ExifIFD.PixelXDimension] = 3024;
-  exif[piexif.ExifIFD.PixelYDimension] = 4032;
-  exif[piexif.ExifIFD.FNumber] = spec.fNumber;
-  exif[piexif.ExifIFD.FocalLength] = spec.focal;
-  exif[piexif.ExifIFD.FocalLengthIn35mmFilm] = spec.focal35;
-  exif[piexif.ExifIFD.ExposureProgram] = 2;
-  exif[piexif.ExifIFD.ISOSpeedRatings] = 100;
-  exif[piexif.ExifIFD.MeteringMode] = 2;
-  exif[piexif.ExifIFD.Flash] = 0;
-  exif[piexif.ExifIFD.WhiteBalance] = 0;
+  exif["0th"][piexif.ImageIFD.Make] = "Meta AI";
+  exif["0th"][piexif.ImageIFD.Model] = "Ray-Ban Meta Smart Glasses 2";
+  exif["0th"][piexif.ImageIFD.Orientation] = 1;
+  exif["Exif"][piexif.ExifIFD.ColorSpace] = 1;
+  exif["Exif"][piexif.ExifIFD.PixelXDimension] = 3024;
+  exif["Exif"][piexif.ExifIFD.PixelYDimension] = 4032;
+  return exif;
+}
 
-  return { "0th": zeroth, "Exif": exif, "GPS": {}, "1st": {}, "thumbnail": null };
+function dataUrlToBlob(dataUrl) {
+  const arr = dataUrl.split(',');
+  const mime = arr[0].match(/:(.*?);/)[1] || 'image/jpeg';
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new Blob([u8arr], { type: mime });
 }
 
 function triggerDownload(dataUrl, filename) {
@@ -706,7 +663,17 @@ function triggerDownload(dataUrl, filename) {
   }, 2000);
 }
 
-// Convert Action
+// Convert Process
+async function processImage() {
+  const orientation = readOrientation(sourceDataUrl);
+  const corrected = await drawCorrected(sourceDataUrl, 3024, 4032, orientation, activeFit);
+  const exif = buildExif(sourceDataUrl);
+  const exifBytes = piexif.dump(exif);
+  finalDataUrl = piexif.insert(exifBytes, corrected);
+  pureBase64 = finalDataUrl.split(",")[1];
+  return { finalDataUrl, pureBase64 };
+}
+
 convertBtn.addEventListener("click", async () => {
   if (!sourceDataUrl) return;
 
@@ -714,40 +681,29 @@ convertBtn.addEventListener("click", async () => {
   showToast("Converting photo...", "loading");
 
   try {
-    const renderedJpeg = await renderCanvas(sourceDataUrl, activeFit);
-    
-    let finalJpeg = renderedJpeg;
-    const exifObj = buildExif(modelSelect.value);
-    if (exifObj && typeof piexif !== 'undefined') {
-      const exifBytes = piexif.dump(exifObj);
-      finalJpeg = piexif.insert(exifBytes, renderedJpeg);
-    }
+    const res = await processImage();
+    previewImg.src = res.finalDataUrl;
 
-    convertedDataUrl = finalJpeg;
-    pureBase64 = finalJpeg.split(",")[1];
-    previewImg.src = finalJpeg;
-
-    // Trigger instant download
-    const filename = (currentFile?.name || "photo").replace(/\.[^/.]+$/, "") + "_rayban_3024x4032.jpg";
-    triggerDownload(finalJpeg, filename);
+    const filename = (currentFile?.name || "photo").replace(/\.[^/.]+$/, "") + "_meta_3024x4032.jpg";
+    triggerDownload(res.finalDataUrl, filename);
 
     shareBtn.disabled = false;
     copyB64Btn.disabled = false;
-    showToast("Photo converted and downloaded.", "success");
+    showToast("Converted & downloaded.", "success");
   } catch (err) {
     console.error(err);
-    showToast("Could not convert image. Try another photo.", "error");
+    showToast("Conversion failed. Try another photo.", "error");
   } finally {
     convertBtn.disabled = false;
   }
 });
 
-// Share Sheet
+// Share to Story / Save to Camera Roll
 shareBtn.addEventListener("click", async () => {
-  if (!convertedDataUrl) return;
+  if (!finalDataUrl) return;
 
-  const blob = dataUrlToBlob(convertedDataUrl);
-  const filename = (currentFile?.name || "photo").replace(/\.[^/.]+$/, "") + "_rayban_3024x4032.jpg";
+  const blob = dataUrlToBlob(finalDataUrl);
+  const filename = (currentFile?.name || "photo").replace(/\.[^/.]+$/, "") + "_meta_3024x4032.jpg";
   const file = new File([blob], filename, { type: "image/jpeg" });
 
   if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -763,9 +719,8 @@ shareBtn.addEventListener("click", async () => {
     }
   }
 
-  // Fallback
-  triggerDownload(convertedDataUrl, filename);
-  showToast("Photo downloaded to device.", "success");
+  triggerDownload(finalDataUrl, filename);
+  showToast("Downloaded to device.", "success");
 });
 
 // Copy Base64
