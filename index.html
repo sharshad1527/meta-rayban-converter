@@ -278,12 +278,6 @@
       box-shadow: none;
     }
 
-    .button-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
-
     .btn-secondary {
       background: rgba(255, 255, 255, 0.05);
       border: 1px solid var(--card-border);
@@ -299,6 +293,7 @@
       justify-content: center;
       gap: 6px;
       transition: background 150ms var(--ease), transform 150ms var(--ease);
+      width: 100%;
     }
 
     .btn-secondary:hover:not(:disabled) {
@@ -423,19 +418,14 @@
       <span>Convert & Download</span>
     </button>
 
-    <!-- Secondary Actions -->
-    <div class="button-row">
-      <button class="btn-secondary" id="shareBtn" disabled>
-        <span>Share to Story / Save</span>
-      </button>
-      <button class="btn-secondary" id="copyB64Btn" disabled>
-        <span>Copy Base64</span>
-      </button>
-    </div>
+    <!-- Secondary Action -->
+    <button class="btn-secondary" id="copyB64Btn" disabled>
+      <span>Copy Base64</span>
+    </button>
 
     <!-- Story Tip -->
     <div class="info-box">
-      <strong>Instagram Story note:</strong> Download directly from this page on your phone. Do not send through WhatsApp/Telegram first, as chat apps compress the photo and delete camera EXIF metadata.
+      <strong>How to share to Instagram Story:</strong> Download the converted photo to your phone. Then go to your <strong>Gallery / Photos app ➔ Share ➔ Instagram Stories</strong> to unlock the Ray-Ban Meta glasses options.
     </div>
 
     <!-- Status Toast -->
@@ -464,7 +454,6 @@ const previewBox = $("previewBox");
 const previewImg = $("previewImg");
 const replaceBtn = $("replaceBtn");
 const convertBtn = $("convertBtn");
-const shareBtn = $("shareBtn");
 const copyB64Btn = $("copyB64Btn");
 const toast = $("toast");
 
@@ -527,7 +516,6 @@ function loadFile(file) {
     previewBox.style.display = "block";
 
     convertBtn.disabled = false;
-    shareBtn.disabled = true;
     copyB64Btn.disabled = true;
 
     hideToast();
@@ -637,9 +625,9 @@ function buildExif(dataUrl) {
 }
 
 function dataUrlToBlob(dataUrl) {
-  const arr = dataUrl.split(',');
-  const mime = arr[0].match(/:(.*?);/)[1] || 'image/jpeg';
-  const bstr = atob(arr[1]);
+  const parts = dataUrl.split(',');
+  const mime = parts[0].match(/:(.*?);/)[1] || 'image/jpeg';
+  const bstr = atob(parts[1]);
   let n = bstr.length;
   const u8arr = new Uint8Array(n);
   while (n--) {
@@ -687,7 +675,6 @@ convertBtn.addEventListener("click", async () => {
     const filename = (currentFile?.name || "photo").replace(/\.[^/.]+$/, "") + "_meta_3024x4032.jpg";
     triggerDownload(res.finalDataUrl, filename);
 
-    shareBtn.disabled = false;
     copyB64Btn.disabled = false;
     showToast("Converted & downloaded.", "success");
   } catch (err) {
@@ -696,31 +683,6 @@ convertBtn.addEventListener("click", async () => {
   } finally {
     convertBtn.disabled = false;
   }
-});
-
-// Share to Story / Save to Camera Roll
-shareBtn.addEventListener("click", async () => {
-  if (!finalDataUrl) return;
-
-  const blob = dataUrlToBlob(finalDataUrl);
-  const filename = (currentFile?.name || "photo").replace(/\.[^/.]+$/, "") + "_meta_3024x4032.jpg";
-  const file = new File([blob], filename, { type: "image/jpeg" });
-
-  if (navigator.canShare && navigator.canShare({ files: [file] })) {
-    try {
-      await navigator.share({
-        files: [file],
-        title: "Ray-Ban Meta Photo",
-        text: "Converted Ray-Ban Meta photo (3024×4032)"
-      });
-      return;
-    } catch (e) {
-      if (e.name === "AbortError") return;
-    }
-  }
-
-  triggerDownload(finalDataUrl, filename);
-  showToast("Downloaded to device.", "success");
 });
 
 // Copy Base64
